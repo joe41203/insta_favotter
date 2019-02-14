@@ -7,6 +7,23 @@ module InstaFavotter
   class Client
     LOGIN_SUBMIT_NUMBER = 1.freeze
 
+    def self.execute(username, password, tag_name)
+      client = new(username, password).login.search(tag_name)
+      
+      client.first_el_click
+
+      10.times do
+        client.fav
+        
+        sleep([*10..20].sample)
+        
+        client.next_pic
+      end
+
+    ensure
+      client.driver.quit
+    end
+
     attr_reader :username, :password, :driver
 
     def initialize(username, password)
@@ -22,14 +39,11 @@ module InstaFavotter
     def login
       driver.get 'https://www.instagram.com/accounts/login/?source=auth_switcher'
 
-      Selenium::WebDriver::Wait.new(timeout: 100)
 
-      return if logined?
+      return self if logined?
 
       driver.find_element(:name, 'username').send_keys(username)
       driver.find_element(:name, 'password').send_keys(password)
-
-      Selenium::WebDriver::Wait.new(timeout: 100)
 
       driver.find_elements(:tag_name, 'button')[LOGIN_SUBMIT_NUMBER].click
       
@@ -38,13 +52,17 @@ module InstaFavotter
 
     def search(tag_name)
       driver.get "https://www.instagram.com/explore/tags/#{tag_name}/"
+
+      self
     end
 
     def first_el_click
+      wait.until { driver.find_element(:xpath, "//*[@id='react-root']/section/main/article/div[2]/div/div[1]/div[1]/a/div/div[2]").displayed? }
       driver.find_element(:xpath, "//*[@id='react-root']/section/main/article/div[2]/div/div[1]/div[1]/a/div/div[2]").click
     end
 
     def fav
+      wait.until { driver.find_element(:xpath, "/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span").displayed? }
       driver.find_element(:xpath, "/html/body/div[2]/div[2]/div/article/div[2]/section[1]/span[1]/button/span").click
     end
 
@@ -56,6 +74,10 @@ module InstaFavotter
 
     def logined?
       driver.current_url == 'https://www.instagram.com/'
+    end
+
+    def wait
+      @wait ||= Selenium::WebDriver::Wait.new(timeout: 100) 
     end
   end
 end
