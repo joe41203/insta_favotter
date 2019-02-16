@@ -12,10 +12,12 @@ module InstaFavotter
       
       client.first_el_click
 
-      10.times do
+      20.times do
+        sleep([*2..5].sample)
+
         client.fav
         
-        sleep([*10..20].sample)
+        sleep([*1..3].sample)
         
         client.next_pic
       end
